@@ -1,5 +1,19 @@
 #include "main.h"
 
+// LCD
+#define LCD_ADDR  			0x27			// LCD Address
+#define LCD_EN 	  			0x04			// Enable
+#define LCD_RW    			0x02			// Read/Write
+#define LCD_RS    			0x01			// Register Select
+#define LCD_BL	  			0x08			// Back-light
+
+// LCD Commands
+#define LCD_CLEAR 			0x01			// Clear Screen
+#define LCD_HOME  			0x02			// Cursor Home
+#define LCD_ENTRY_MODE  	0x06			// Increments cursor, no shift
+#define LCD_DISPLAY_ON  	0x0C			// Display on, cursor off, blink off
+#define LCD_FUNCTION_SET 	0x28			// 4-bit mode, 2 lines, 5x8 font
+
 //Prototypes
 void SYS_Init();
 uint16_t ADC_Read();
@@ -131,6 +145,39 @@ void I2C_Write(uint8_t address, uint8_t data) {
 	I2C_Send_Address(address, 0);
 	I2C_Send_Data(data);
 	I2C_Stop();
+}
+
+void LCD_Send_Command(uint8_t cmd) {
+	uint8_t upper = (cmd & 0xF0) | LCD_BL;							// 4-bit Sequences to send commands
+	uint8_t lower = ((cmd << 4) & 0xF0) | LCD_BL;
+
+	I2C_Write(LCD_ADDR, upper | LCD_EN);
+	I2C_Write(LCD_ADDR, upper);
+
+	I2C_Write(LCD_ADDR, lower | LCD_EN);
+	I2C_Write(LCD_ADDR, lower);
+}
+
+void LCD_Init() {
+	for (volatile int i = 0; i < 5000; i++);						// Initializes the LCD with 4-bit mode and clears screen
+
+	LCD_SendCommand(0x33);
+	LCD_SendCommand(0x32);
+	LCD_SendCommand(LCD_FUNCTION_SET);
+	LCD_SendCommand(LCD_DISPLAY_ON);
+	LCD_SendCommand(LCD_ENTRY_MODE);
+	LCD_SendCommand(LCD_CLEAR);
+}
+
+void LCD_Send_Data(uint8_t cmd) {
+	uint8_t upper = (cmd & 0xF0) | LCD_BL;							// 4-bit Sequences to send data
+	uint8_t lower = ((cmd << 4) & 0xF0) | LCD_BL;
+
+	I2C_Write(LCD_ADDR, upper | LCD_RS);
+	I2C_Write(LCD_ADDR, upper);
+
+	I2C_Write(LCD_ADDR, lower | LCD_RS);
+	I2C_Write(LCD_ADDR, lower);
 }
 
 
