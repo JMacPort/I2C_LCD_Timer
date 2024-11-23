@@ -161,12 +161,12 @@ void LCD_Send_Command(uint8_t cmd) {
 void LCD_Init() {
 	for (volatile int i = 0; i < 5000; i++);						// Initializes the LCD with 4-bit mode and clears screen
 
-	LCD_SendCommand(0x33);
-	LCD_SendCommand(0x32);
-	LCD_SendCommand(LCD_FUNCTION_SET);
-	LCD_SendCommand(LCD_DISPLAY_ON);
-	LCD_SendCommand(LCD_ENTRY_MODE);
-	LCD_SendCommand(LCD_CLEAR);
+	LCD_Send_Command(0x33);
+	LCD_Send_Command(0x32);
+	LCD_Send_Command(LCD_FUNCTION_SET);
+	LCD_Send_Command(LCD_DISPLAY_ON);
+	LCD_Send_Command(LCD_ENTRY_MODE);
+	LCD_Send_Command(LCD_CLEAR);
 }
 
 void LCD_Send_Data(uint8_t cmd) {
