@@ -25,3 +25,6 @@ Displays the time in the top center of the LCD. The bottom left and right will c
 - PB4 to breadboard to resistor to button + 5V/GND 
 - PB5 to breadboard to resistor to button + 5V/GND
 - PA0 to breadboard to potentiometer + 5V/GND
+
+
+![LCD_Screen](/images/LCD_Screen.jpeg)
