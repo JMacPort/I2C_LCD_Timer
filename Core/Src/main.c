@@ -33,7 +33,6 @@ int main() {
     SYS_Init();
     LCD_Init();
     for(volatile int i = 0; i < 50000; i++);
-
     LCD_Get_Time(hours, minutes);
 
     while(1) {
@@ -78,16 +77,47 @@ void ADC_Init() {
 	ADC1 -> CR2 |= (1 << 0);										// Enable ADC Converter
 }
 
+void Timer_Init() {
+	RCC -> APB1ENR |= (1 << 0);										// TIM2 Clock Initialize
+
+	TIM2 -> PSC = 15999;											// 1 second trigger
+	TIM2 -> ARR = 999;
+	TIM2 -> DIER |= (1 << 0);										// Interrupt Enable
+
+	TIM2 -> CR1 |= (1 << 0);										// Timer Enable
+}
+
+void TIM2_IRQHandler() {
+	if (TIM2 -> SR & (1 << 0)) {
+		seconds++;
+		if (seconds == 60) {
+			seconds = 0;
+			minutes++;
+			LCD_Get_Time(hours, minutes);
+		}
+		if (minutes == 60) {
+			minutes = 0;
+			hours++;
+			LCD_Get_Time(hours, minutes);
+		}
+		if (hours == 13) {
+			hours = 1;
+			LCD_Get_Time(hours, minutes);
+		}
+	}
+	TIM2 -> SR &= ~(1 << 0);
+
+}
+
 void Interrupt_Init() {
 	RCC -> APB2ENR |= (1 << 14);									// Enable SYSCFG
 
 	SYSCFG -> EXTICR[2] |= (1 << 0) | (1 << 1);						// Interrupts on PB4 & 5
 
 	EXTI -> IMR |= (1 << 4) | (1 << 5);								// Interrupt Mask
-	EXTI -> RTSR |= (1 << 4) | (1 << 5);							// Rising Trigger
+	EXTI ->	FTSR |= (1 << 4) | (1 << 5);							// Falling Trigger
 
-	NVIC -> ISER[0] |= (1 << 10) | (1 << 23);						// NVIC Interrupts on
-
+	NVIC -> ISER[0] |= (1 << 10) | (1 << 23) | (1 << 28);			// NVIC Interrupts on
 }
 
 void I2C_Init() {
@@ -106,6 +136,7 @@ void I2C_Init() {
 
 void SYS_Init() {
 	GPIO_Init();
+	Timer_Init();
 	ADC_Init();
 	Interrupt_Init();
 	I2C_Init();
@@ -195,7 +226,7 @@ void LCD_Send_Data(uint8_t data) {
 	I2C_Write(LCD_ADDR, lower);
 }
 
-void LCD_Send_String(char* data) {
+void LCD_Send_String(char* data) {										// Prints full strings to screen
 	while (*data != '\0') {
 		LCD_Send_Data(*data);
 		data++;
@@ -203,8 +234,7 @@ void LCD_Send_String(char* data) {
 	}
 }
 
-void LCD_Get_Time(uint8_t hours, uint8_t minutes) {
-
+void LCD_Get_Time(uint8_t hours, uint8_t minutes) {						// Prints HH:MM to screen
     char hour[4];
     sprintf(hour, "%u", hours);
 
@@ -213,7 +243,7 @@ void LCD_Get_Time(uint8_t hours, uint8_t minutes) {
 
     LCD_Send_Command(LCD_CLEAR);
     for(volatile int i = 0; i < 5000; i++);
-    LCD_Send_Command(0x86);
+    LCD_Send_Command(0x86);												// Sets to position to be in the middle of the screen
     for(volatile int i = 0; i < 5000; i++);
     LCD_Send_String(hour);
     for(volatile int i = 0; i < 5000; i++);
