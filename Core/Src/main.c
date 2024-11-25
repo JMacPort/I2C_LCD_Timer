@@ -1,4 +1,6 @@
 #include "main.h"
+#include <stdio.h>
+#include <stdint.h>
 
 // LCD
 #define LCD_ADDR  			0x27			// LCD Address
@@ -17,13 +19,25 @@
 //Prototypes
 void SYS_Init();
 uint16_t ADC_Read();
+void LCD_Send_Command(uint8_t);
+void LCD_Init();
+void LCD_Send_Data(uint8_t);
+void LCD_Send_String(char*);
+void LCD_Get_Time(uint8_t, uint8_t);
+
+uint8_t hours = 1;
+uint8_t minutes = 0;
+uint8_t seconds = 0;
 
 int main() {
-	SYS_Init();
+    SYS_Init();
+    LCD_Init();
+    for(volatile int i = 0; i < 50000; i++);
 
-	while (1) {
+    LCD_Get_Time(hours, minutes);
 
-	}
+    while(1) {
+    }
 }
 
 void GPIO_Init() {
@@ -48,7 +62,7 @@ void GPIO_Init() {
 	GPIOB -> PUPDR |= (1 << (8 * 2)) | (1 << (9 * 2));
 
 	GPIOB -> AFR[1] &= ~((0xF << 0) | (0xF << 1));					// Sets AF4 for I2C1 Communication
-	GPIOB -> AFR[1] |= (4 << 0) | (4 << 1);
+	GPIOB -> AFR[1] |= (4 << 0) | (4 << 4);
 }
 
 void ADC_Init() {
@@ -141,6 +155,7 @@ void I2C_Stop() {
 }
 
 void I2C_Write(uint8_t address, uint8_t data) {
+	while(I2C_Check_Busy());
 	I2C_Start();													// Writes byte to device
 	I2C_Send_Address(address, 0);
 	I2C_Send_Data(data);
@@ -159,7 +174,7 @@ void LCD_Send_Command(uint8_t cmd) {
 }
 
 void LCD_Init() {
-	for (volatile int i = 0; i < 5000; i++);						// Initializes the LCD with 4-bit mode and clears screen
+	for (volatile int i = 0; i < 50000; i++);						// Initializes the LCD with 4-bit mode and clears screen
 
 	LCD_Send_Command(0x33);
 	LCD_Send_Command(0x32);
@@ -169,16 +184,43 @@ void LCD_Init() {
 	LCD_Send_Command(LCD_CLEAR);
 }
 
-void LCD_Send_Data(uint8_t cmd) {
-	uint8_t upper = (cmd & 0xF0) | LCD_BL;							// 4-bit Sequences to send data
-	uint8_t lower = ((cmd << 4) & 0xF0) | LCD_BL;
+void LCD_Send_Data(uint8_t data) {
+	uint8_t upper = (data & 0xF0) | LCD_BL | LCD_RS;							// 4-bit Sequences to send data
+	uint8_t lower = ((data << 4) & 0xF0) | LCD_BL | LCD_RS;
 
-	I2C_Write(LCD_ADDR, upper | LCD_RS);
+	I2C_Write(LCD_ADDR, upper | LCD_EN);
 	I2C_Write(LCD_ADDR, upper);
 
-	I2C_Write(LCD_ADDR, lower | LCD_RS);
+	I2C_Write(LCD_ADDR, lower | LCD_EN);
 	I2C_Write(LCD_ADDR, lower);
 }
+
+void LCD_Send_String(char* data) {
+	while (*data != '\0') {
+		LCD_Send_Data(*data);
+		data++;
+		for (volatile int i = 0; i < 10000; i++);
+	}
+}
+
+void LCD_Get_Time(uint8_t hours, uint8_t minutes) {
+    char hour[4];
+    sprintf(hour, "%u", hours);
+
+    char minute[4];
+    sprintf(minute, "%02u", minutes);
+
+
+    LCD_Send_Command(LCD_CLEAR);
+    for(volatile int i = 0; i < 5000; i++);
+
+    LCD_Send_String(hour);
+    for(volatile int i = 0; i < 5000; i++);
+    LCD_Send_String(":");
+    for(volatile int i = 0; i < 5000; i++);
+    LCD_Send_String(minute);
+}
+
 
 
 
