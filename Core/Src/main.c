@@ -204,16 +204,17 @@ void LCD_Send_String(char* data) {
 }
 
 void LCD_Get_Time(uint8_t hours, uint8_t minutes) {
+
     char hour[4];
     sprintf(hour, "%u", hours);
 
     char minute[4];
     sprintf(minute, "%02u", minutes);
 
-
     LCD_Send_Command(LCD_CLEAR);
     for(volatile int i = 0; i < 5000; i++);
-
+    LCD_Send_Command(0x86);
+    for(volatile int i = 0; i < 5000; i++);
     LCD_Send_String(hour);
     for(volatile int i = 0; i < 5000; i++);
     LCD_Send_String(":");
