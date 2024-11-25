@@ -10,8 +10,11 @@ Displays the time in the top center of the LCD. The bottom left and right will c
 
 # Features
 - I2C Communication
+- Timer interrupt to advance clock
+
+# Will add in future (maybe)... Want to work on more projects
 - User can set the clock via button selects
-- Menu driven architecture to select modes
+- Menu driven architecture to select modes (12hr/24hr, AM/PM)
 - Potentiometer values converted from analog to digital via ADC 
 
 # Pins 
